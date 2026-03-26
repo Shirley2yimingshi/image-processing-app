@@ -55,28 +55,26 @@ if uploaded_file is not None:
         elif mode == "Gradient":
             st.subheader("框选区域计算梯度")
         
-            # ⭐ 缩放原图适配 Canvas
+            # 显示原图
             max_size = 600
             h, w = img.shape[:2]
             scale = max_size / max(h, w)
-        
             new_w = int(w * scale)
             new_h = int(h * scale)
             img_resized = cv2.resize(img, (new_w, new_h))
-            img_pil = Image.fromarray(cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB))
+            st.image(cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB), caption="原图", use_column_width=True)
         
-            # Canvas 显示原图
+            # Canvas 只作绘图，不用背景图
             canvas_result = st_canvas(
                 fill_color="rgba(255, 0, 0, 0.3)",
                 stroke_width=2,
-                background_image=img_pil,  # ⚡ 背景图必须是 PIL RGB
+                background_color="rgba(0,0,0,0)",  # 透明
                 update_streamlit=True,
                 height=new_h,
                 width=new_w,
                 drawing_mode="rect"
             )
         
-            # 检查是否有框选
             if canvas_result.json_data and len(canvas_result.json_data["objects"]) > 0:
                 rect = canvas_result.json_data["objects"][-1]
         
@@ -86,13 +84,13 @@ if uploaded_file is not None:
                 w_box = int(rect["width"])
                 h_box = int(rect["height"])
         
-                # 转回原图坐标
+                # 回到原图坐标
                 x_orig = int(x / scale)
                 y_orig = int(y / scale)
                 w_orig = int(w_box / scale)
                 h_orig = int(h_box / scale)
         
-                # 防止越界
+                # 防越界
                 x_orig = max(0, x_orig)
                 y_orig = max(0, y_orig)
                 w_orig = min(w - x_orig, w_orig)
@@ -115,10 +113,9 @@ if uploaded_file is not None:
                 magnitude_disp = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
                 direction_disp = cv2.normalize(direction, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
         
-                # 绘制梯度箭头
+                # 绘制箭头
                 arrows = draw_gradient_arrows(patch, gx, gy, step=10, scale=0.3)
         
-                # 显示结果
                 col1, col2 = st.columns(2)
                 col3, col4 = st.columns(2)
         
