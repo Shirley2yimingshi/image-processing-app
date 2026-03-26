@@ -55,20 +55,21 @@ if uploaded_file is not None:
         elif mode == "Gradient":
             st.subheader("框选区域计算梯度")
         
-            # ⭐ 关键：先缩放图像（解决canvas错位）
             max_size = 600
             h, w = img.shape[:2]
             scale = max_size / max(h, w)
-        
             new_w = int(w * scale)
             new_h = int(h * scale)
-        
             img_resized = cv2.resize(img, (new_w, new_h))
+            img_pil = Image.fromarray(cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB))
         
+            st.image(img_resized, caption="缩放后的原图", channels="RGB")  # 可选，方便用户看到
+        
+            # 创建可绘制 Canvas
             canvas_result = st_canvas(
                 fill_color="rgba(255, 0, 0, 0.3)",
                 stroke_width=2,
-                background_image=Image.fromarray(cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB)),
+                background_image=img_pil,
                 update_streamlit=True,
                 height=new_h,
                 width=new_w,
@@ -78,7 +79,7 @@ if uploaded_file is not None:
             if canvas_result.json_data and len(canvas_result.json_data["objects"]) > 0:
                 rect = canvas_result.json_data["objects"][-1]
         
-                # canvas坐标
+                # canvas 坐标
                 x = int(rect["left"])
                 y = int(rect["top"])
                 w_box = int(rect["width"])
@@ -104,12 +105,12 @@ if uploaded_file is not None:
                 magnitude = np.sqrt(gx**2 + gy**2)
                 direction = np.arctan2(gy, gx)
         
-                # 归一化为 uint8
+                # 归一化显示
                 magnitude_disp = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
                 direction_disp = cv2.normalize(direction, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
         
-                # 绘制梯度箭头
-                arrows = draw_gradient_arrows(magnitude_disp, gx, gy, step=10, scale=0.3)
+                # ⭐ 绘制梯度箭头（修正参数）
+                arrows = draw_gradient_arrows(patch, gx, gy, step=10)
         
                 # 显示结果
                 st.image(patch, caption="选中区域", clamp=True)
