@@ -57,7 +57,8 @@ def low_pass_filter(fshift):
     fshift_filtered = fshift * mask
     return fshift_filtered
 
-def draw_gradient_arrows(patch, gx, gy, step=10):
+def draw_gradient_arrows(patch, gx, gy, step=10, scale=0.3):
+   
     vis = cv2.cvtColor(patch, cv2.COLOR_GRAY2BGR)
 
     for i in range(0, patch.shape[0], step):
@@ -65,9 +66,9 @@ def draw_gradient_arrows(patch, gx, gy, step=10):
             dx = gx[i, j]
             dy = gy[i, j]
 
-            end_x = int(j + dx * 0.1)
-            end_y = int(i + dy * 0.1)
+            end_x = int(j + dx * scale)
+            end_y = int(i + dy * scale)
 
-            cv2.arrowedLine(vis, (j, i), (end_x, end_y), (0, 0, 255), 1)
+            cv2.arrowedLine(vis, (j, i), (end_x, end_y), (0, 0, 255), 1, tipLength=0.3)
 
     return vis
