@@ -54,63 +54,78 @@ if uploaded_file is not None:
         # Gradient
         elif mode == "Gradient":
             st.subheader("框选区域计算梯度")
-
-            # ⭐ 关键：先缩放图像（解决canvas错位）
+        
+            # ⭐ 缩放原图以适应 Canvas
             max_size = 600
             h, w = img.shape[:2]
             scale = max_size / max(h, w)
-
+        
             new_w = int(w * scale)
             new_h = int(h * scale)
-
+        
             img_resized = cv2.resize(img, (new_w, new_h))
-
+            img_pil = Image.fromarray(cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB))
+        
+            # 可选：显示缩放后的原图，确认尺寸
+            st.image(img_resized, caption="缩放后的原图", channels="RGB")
+        
+            # Canvas 设置
             canvas_result = st_canvas(
                 fill_color="rgba(255, 0, 0, 0.3)",
                 stroke_width=2,
-                background_image=Image.fromarray(cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB)),
+                background_image=img_pil,
                 update_streamlit=True,
                 height=new_h,
                 width=new_w,
                 drawing_mode="rect"
             )
-
+        
+            # 检查是否有框选
             if canvas_result.json_data and len(canvas_result.json_data["objects"]) > 0:
                 rect = canvas_result.json_data["objects"][-1]
-
-                # canvas坐标
+        
+                # Canvas 坐标
                 x = int(rect["left"])
                 y = int(rect["top"])
                 w_box = int(rect["width"])
                 h_box = int(rect["height"])
-
+        
+                # 转回原图坐标
                 x_orig = int(x / scale)
                 y_orig = int(y / scale)
                 w_orig = int(w_box / scale)
                 h_orig = int(h_box / scale)
-
+        
+                # 灰度图
                 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
                 patch = gray[y_orig:y_orig+h_orig, x_orig:x_orig+w_orig]
-
+        
                 if patch.size == 0:
                     st.warning("选区无效")
                     st.stop()
-
+        
+                # 计算梯度
                 gx = cv2.Sobel(patch, cv2.CV_64F, 1, 0)
                 gy = cv2.Sobel(patch, cv2.CV_64F, 0, 1)
-
+        
                 magnitude = np.sqrt(gx**2 + gy**2)
                 direction = np.arctan2(gy, gx)
-
-                magnitude = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX)
-                direction = cv2.normalize(direction, None, 0, 255, cv2.NORM_MINMAX)
-
-                arrows = draw_gradient_arrows(patch, gx, gy)
-
-                st.image(patch, caption="选中区域", clamp=True)
-                st.image(magnitude.astype(np.uint8), caption="梯度幅值", clamp=True)
-                st.image(direction.astype(np.uint8), caption="梯度方向", clamp=True)
-                st.image(arrows, caption="箭头方向图", channels="BGR")
+        
+                # 归一化为 uint8
+                magnitude_disp = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+                direction_disp = cv2.normalize(direction, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+        
+                # 绘制梯度箭头
+                arrows = draw_gradient_arrows(patch, gx, gy, step=10, scale=0.3)
+        
+                # 显示结果
+                col1, col2 = st.columns(2)
+                col3, col4 = st.columns(2)
+        
+                col1.image(patch, caption="选中区域", clamp=True)
+                col2.image(magnitude_disp, caption="梯度幅值", clamp=True)
+                col3.image(direction_disp, caption="梯度方向", clamp=True)
+                col4.image(arrows, caption="箭头方向图", channels="BGR")
 
        
         # FFT
