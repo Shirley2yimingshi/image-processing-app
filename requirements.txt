@@ -1,12 +1,5 @@
-# Streamlit 主框架
 streamlit==1.30.0
-
-# 可绘制画布（最新可用版本）
 streamlit-drawable-canvas==0.9.3
-
-# 图像处理
-opencv-python==4.8.1.78
+opencv-python-headless==4.8.1.78
 Pillow==10.0.0
-
-# 数值计算
 numpy==1.26.0
